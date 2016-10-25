@@ -1,0 +1,115 @@
+body {
+  font-family: BentonSans-Book, Arial, Helvetica, sans-serif;
+  color: #333;
+}
+
+a, a:hover {
+  color: #333;
+  text-decoration: none;
+}
+
+#container {
+  min-width: 400px
+}
+
+@media only screen and (max-width: 1055px) {
+  [class*="col-"] {
+    width: 100%;
+  }
+}
+
+@media only screen and (max-width: 756px) {
+  [class*="col-"] {
+    width: 100%;
+  }
+}
+
+@media only screen and (min-width: 1900px) {
+
+}
+
+.col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xl-1, .col-xl-10, .col-xl-11, .col-xl-12, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9 {
+  padding-right: 5px;
+  padding-left: 5px;
+}
+
+#search {
+  top: 0;
+  position: absolute;
+  z-index: 1;
+  padding-left: 30px;
+  border: 0;
+}
+
+.row {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.item {
+    border-bottom: 1px solid rgba(128, 128, 128, 0.5);
+    padding-bottom: 5px;
+}
+
+.item:hover {
+    background-color: rgba(241, 241, 241, 0.5);
+}
+
+.media {
+    margin-top: 0px;
+    padding-top: 10px;
+}
+
+.section {
+  border-bottom: 1px solid grey;
+  font-size: 12px;
+  padding-top: 20px;
+  padding-left: 10px;
+}
+
+.section h2{
+  font-size: 15px;
+  display: inline;
+  padding-right: 20px;
+}
+
+#results {
+  margin-left: 0px;
+}
+
+.media-left {
+    padding-right: 20px;
+}
+
+.thumbnail {
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  width: 72px;
+  height: 52px;
+  border: 1px solid #e6e6e6;
+  margin-left: 10px;
+}
+
+.media-body {
+  vertical-align: middle;
+  height: 17px;
+  line-height: 17px;
+  padding-right: 3px;
+  color: #999;
+  font-size: 11px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+h4 {
+  line-height: 20px;
+  font-size: 14px;
+}
+
+.fa-search {
+  z-index: 99;
+  position: inherit;
+  padding-left: 10px;
+  padding-top: 8px;
+  color: rgba(85, 89, 92, 0.5);
+}

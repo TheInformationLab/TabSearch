@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Tableau Server Chrome Extension</title>
+  	<link href='http://fonts.googleapis.com/css?family=Ropa+Sans' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/options.css">
+  </head>
+  <body>
+  <div id="container">
+        <div class='form-group'>
+          <label class='sr-only' for='serverUrl'>Server URL</label>
+          <input type='text' class='form-control' id='serverUrl' placeholder='Server URL' value=''/>
+        </div>
+        <div class='row'>
+          <div class='col-xs-3'>
+          <label class='sr-only' for='username'>Username</label>
+          <input type='text' class='form-control' id='username' placeholder='Username' value=''/>
+          </div>
+          <div class='col-xs-3'>
+          <label class='sr-only' for='password'>Password</label>
+          <input type='password' class='form-control' id='password' placeholder='Password' value=''/>
+          </div>
+          <div class='col-xs-2'>
+          <a id='loginBtn' class='btn btn-primary form-control'>Sign In</a>
+          </div>
+        </div>
+        <div class='row'>
+          <div class='col-xs-4'>
+            <label class='sr-only' for='sites'>Site</label>
+            <select id='sites' class='form-control'><option value=""> - Select a Site - </option></select>
+          </div>
+        </div>
+        <div class='row' id="connectedClient">
+          <div class='col-xs-3'>
+            <label class='sr-only' for='computer'>Computer Name</label>
+            <input type='text' class='form-control' id='computer' placeholder='Computer Name' value=''/>
+          </div>
+          <div class='col-xs-2'>
+            <a id='saveBtn' class='btn btn-primary form-control'>Stay Connected</a>
+          </div>
+        </div>
+  </div>
+  </body>
+  <script src="js/lib/jquery.min.js"></script>
+  <script src="js/lib/bootstrap.min.js"></script>
+  <script src="js/lib/rsa.js"></script>
+  <script src="js/bin/options.js"></script>
+</html>
