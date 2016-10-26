@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Tableau Server Chrome Extension</title>
+  	<link href='http://fonts.googleapis.com/css?family=Ropa+Sans' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/view.css">
+  </head>
+  <body>
+    <nav class="navbar navbar-light bg-faded">
+      <div class="nav navbar-nav">
+        <a class="nav-item nav-link active" href="#" data-tab="views">Views</a>
+        <a class="nav-item nav-link" href="#" data-tab="workbooks">Workbooks</a>
+        <a class="nav-item nav-link last-link" href="#" data-tab="datasources">Data Sources</a>
+      </div>
+      <div class="form-inline float-lg-right ">
+        <i class="fa fa-search" aria-hidden="true"></i>
+        <input class="form-control" type="text" id="searchTerm" placeholder="Search">
+        <button class="btn btn-outline-secondary" id="search" type="submit">Search</button>
+      </div>
+    </nav>
+    <div class="container-fluid">
+      <div id="views" class="tab">
+        <div class="row"></div>
+      </div>
+      <div id="workbooks" class="tab hide">
+        <div class="row"></div>
+      </div>
+      <div id="datasources" class="tab hide">
+        <div class="row"></div>
+      </div>
+    </div>
+  </body>
+  <script src="js/lib/jquery.min.js"></script>
+  <script src="js/lib/tether.min.js"></script>
+  <script src="js/lib/bootstrap.min.js"></script>
+  <script src="js/lib/rsa.js"></script>
+  <script src="js/bin/app.js"></script>
+</html>

@@ -113,3 +113,13 @@ h4 {
   padding-top: 8px;
   color: rgba(85, 89, 92, 0.5);
 }
+
+.ViewAll {
+    display: inline;
+    right: 10px;
+    position: absolute;
+    font-weight: 600;
+}
+.ViewAll a{
+    color: #2f7896;
+}
