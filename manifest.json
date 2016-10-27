@@ -11,7 +11,11 @@
     "default_icon": "img/icon.png",
     "default_popup": "popup.html"
   },
-  "options_page": "options.html",
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true,
+    "open_in_tab": false
+  },
   "permissions": [
 	"http://*/*","https://*/*","storage","tabs","cookies","gcm"
   ]
