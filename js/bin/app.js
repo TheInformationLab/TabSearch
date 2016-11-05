@@ -32,7 +32,7 @@
     	}
     	$.ajax(settings).done(function (response) {
         console.log("All's good");
-        app.saveCreds(serverUrl, response.result.site.urlName, response.result.user.username, function(resp) {
+        app.saveCreds(serverUrl, response.result.site.urlName, response.result.user.username,response.result.user.id, function(resp) {
           callback(resp);
         })
       }).fail(function() {
@@ -48,7 +48,7 @@
     });
   }
 
-  app.saveCreds = function(serverUrl, site, username, callback) {
+  app.saveCreds = function(serverUrl, site, username, userId, callback) {
     var parser = document.createElement('a');
     parser.href = serverUrl;
     chrome.cookies.getAll({domain : parser.hostname}, function(cookies) {
@@ -67,6 +67,7 @@
       creds.xsrf_token = xsrf_token;
       creds.server_url = serverUrl;
       creds.username = username;
+      creds.userId = userId;
       if (site != "") {
         creds.site = "/#/site/" + site;
       } else {
@@ -78,13 +79,13 @@
     });
   }
 
-  app.getWorkbooks = function(str, all, page, workbooks, callback) {
+  app.getWorkbooks = function(str, all, page, workbooks, live, callback) {
     chrome.storage.local.get(null, function(creds) {
       var itemLimit = 5;
       if(all) {
-        itemLimit = 50;
+        itemLimit = 200;
       }
-      page = page * itemLimit;
+      var curPage = page * itemLimit ;
       var settings = {
         "async": true,
         "crossDomain": true,
@@ -95,7 +96,10 @@
           "accept": "application/json, text/plain, */*",
     			"content-type": "application/json;charset=UTF-8"
         },
-        "data" : "{\"method\":\"getWorkbooks\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+page+",\"maxItems\":"+itemLimit+"}}}"
+        "data" : "{\"method\":\"getWorkbooks\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
+      }
+      if (creds.server_url == "https://public.tableau.com") {
+        settings.data = "{\"method\":\"getWorkbooks\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"eq\",\"field\":\"ownerId\",\"value\":\""+creds.userId+"\"},{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
       }
       $.ajax(settings).done(function (response) {
         workbooks = workbooks.concat(response.result.workbooks);
@@ -103,8 +107,8 @@
         response.serverUrl = creds.server_url;
         response.site = creds.site;
         if (response.result.moreItems && all) {
-          callback(response);
-          app.getWorkbooks(str, true, page + 1, workbooks, callback);
+          if((live) ? callback(response) : null);
+          app.getWorkbooks(str, all, page + 1, workbooks, live, callback);
         } else {
           callback(response);
         }
@@ -112,13 +116,13 @@
     });
   }
 
-  app.getViews = function(str, all, page, views, callback) {
+  app.getViews = function(str, all, page, views, live, callback) {
     chrome.storage.local.get(null, function(creds) {
       var itemLimit = 5;
       if(all) {
-        itemLimit = 50;
+        itemLimit = 200;
       }
-      page = page * itemLimit;
+      var curPage = page * itemLimit ;
       var settings = {
         "async": true,
         "crossDomain": true,
@@ -129,7 +133,10 @@
           "accept": "application/json, text/plain, */*",
     			"content-type": "application/json;charset=UTF-8"
         },
-        "data" : "{\"method\":\"getViews\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+page+",\"maxItems\":"+itemLimit+"}}}"
+        "data" : "{\"method\":\"getViews\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
+      }
+      if (creds.server_url == "https://public.tableau.com") {
+        settings.data = "{\"method\":\"getViews\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"eq\",\"field\":\"ownerId\",\"value\":\""+creds.userId+"\"},{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
       }
       $.ajax(settings).done(function (response) {
         views = views.concat(response.result.views);
@@ -137,8 +144,8 @@
         response.serverUrl = creds.server_url;
         response.site = creds.site;
         if (response.result.moreItems && all) {
-          callback(response);
-          app.getViews(str, true, page + 1, views, callback);
+          if((live) ? callback(response) : null);
+          app.getViews(str, all, page + 1, views, live, callback);
         } else {
           callback(response);
         }
@@ -146,13 +153,13 @@
     });
   }
 
-  app.getDatasources = function(str, all, page, datasources, callback) {
+  app.getDatasources = function(str, all, page, datasources, live, callback) {
     chrome.storage.local.get(null, function(creds) {
       var itemLimit = 5;
       if(all) {
-        itemLimit = 50;
+        itemLimit = 200;
       }
-      page = page * itemLimit;
+      var curPage = page * itemLimit ;
       var settings = {
         "async": true,
         "crossDomain": true,
@@ -163,7 +170,7 @@
           "accept": "application/json, text/plain, */*",
     			"content-type": "application/json;charset=UTF-8"
         },
-        "data" : "{\"method\":\"getDatasources\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"eq\",\"field\":\"isPublished\",\"value\":true},{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+page+",\"maxItems\":"+itemLimit+"}}}"
+        "data" : "{\"method\":\"getDatasources\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"eq\",\"field\":\"isPublished\",\"value\":true},{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
       }
       $.ajax(settings).done(function (response) {
         datasources = datasources.concat(response.result.datasources);
@@ -171,8 +178,8 @@
         response.serverUrl = creds.server_url;
         response.site = creds.site;
         if (response.result.moreItems && all) {
-          callback(response);
-          app.getDatasources(str, true, page + 1, datasources, callback);
+          if((live) ? callback(response) : null);
+          app.getDatasources(str, live, page + 1, datasources, live, callback);
         } else {
           callback(response);
         }
@@ -228,11 +235,11 @@
     return html;
   }
 
-  var doSearch = function(str) {
+  app.doSearch = function(str) {
     $('#workbooks').html("");
-    app.getWorkbooks(str,false,0,[], function(resp) {
+    app.getWorkbooks(str,false,0,[], false, function(resp) {
       var workbooks = resp.result.workbooks;
-      if (workbooks.length > 0) {
+      if (resp.result.totalCount > 0) {
         $('#workbooks').append("<div class='section'><h2>Workbooks</h2>"+resp.result.totalCount+"<div class='ViewAll'><a href='view.html?s="+str+"&v=workbooks' target='_blank'>View All</a></div></div>");
         $.each(workbooks, function(val, opt) {
           $('#workbooks').append(buildRow(resp.serverUrl + resp.site + "/views/" + opt.defaultViewUrl, resp.serverUrl + "/" + opt.thumbnailUrl, opt.name, opt.usageInfo.hitsTotal));
@@ -240,9 +247,9 @@
       }
     });
     $('#views').html("");
-    app.getViews(str,false,0,[], function(resp) {
+    app.getViews(str,false,0,[], false, function(resp) {
       var views = resp.result.views;
-      if (views.length > 0) {
+      if (resp.result.totalCount > 0) {
         $('#views').append("<div class='section'><h2>Views</h2>"+resp.result.totalCount+"<div class='ViewAll'><a href='view.html?s="+str+"&v=views' target='_blank'>View All</a></div></div>");
         $.each(views, function(val, opt) {
           $('#views').append(buildRow(resp.serverUrl + resp.site + "/views/" + opt.path, resp.serverUrl + "/" + opt.thumbnailUrl, opt.name, opt.usageInfo.hitsTotal));
@@ -250,9 +257,9 @@
       }
     });
     $('#datasources').html("");
-    app.getDatasources(str,false,0,[], function(resp) {
+    app.getDatasources(str,false,0,[], false, function(resp) {
       var datasources = resp.result.datasources;
-      if (datasources.length > 0) {
+      if (resp.result.totalCount > 0) {
         $('#datasources').append("<div class='section'><h2>Data Sources</h2>"+resp.result.totalCount+"<div class='ViewAll'><a href='view.html?s="+str+"&v=datasources' target='_blank'>View All</a></div></div>");
         $.each(datasources, function(val, opt) {
           $('#datasources').append(buildRow(resp.serverUrl + resp.site + "/datasources/" + opt.id + "/connections", "/img/ds.png", opt.name, opt.usageInfo.hitsTotal));
@@ -261,7 +268,7 @@
     });
   }
 
-  var showFavourites = function() {
+  app.showFavourites = function() {
     $('#workbooks').html("");
     $('#views').html("");
     $('#datasources').html("");
@@ -300,7 +307,7 @@
   var timeoutID = null;
   $('#search').keyup(function(e) {
     clearTimeout(timeoutID);
-    timeoutID = setTimeout(doSearch.bind(undefined, $('#search').val()), 500);
+    timeoutID = setTimeout(app.doSearch.bind(undefined, $('#search').val()), 500);
   });
 
   function getParameterByName(name, url) {
@@ -315,33 +322,54 @@
     return decodeURIComponent(results[2].replace(/\+/g, " "));
   }
 
-  var pageSearch = function(searchTerm) {
+  app.pageSearch = function(searchTerm) {
     $('#views .row').html("");
-    app.getViews(searchTerm,true,0,[], function(response) {
+    app.getViews(searchTerm,true,0,[], true, function(response) {
       var views = response.result.views;
       if (views.length > 0) {
         $.each(views, function(val, opt) {
-          $('#views .row').append(buildTile(response.serverUrl + response.site + "/views/" + opt.path, response.serverUrl + "/" + opt.thumbnailUrl, opt.name, opt.usageInfo.hitsTotal));
+          if (opt) {
+            $('#views .row').append(buildTile(response.serverUrl + response.site + "/views/" + opt.path, response.serverUrl + "/" + opt.thumbnailUrl, opt.name, opt.usageInfo.hitsTotal));
+          }
         });
       }
     });
     $('#workbooks .row').html("");
-    app.getWorkbooks(searchTerm,true,0,[], function(response) {
+    app.getWorkbooks(searchTerm,true,0,[], true, function(response) {
       var workbooks = response.result.workbooks;
       if (workbooks.length > 0) {
         $.each(workbooks, function(val, opt) {
-          $('#workbooks .row').append(buildTile(response.serverUrl + response.site + "/views/" + opt.defaultViewUrl, response.serverUrl + "/" + opt.thumbnailUrl, opt.name, opt.usageInfo.hitsTotal));
+          if (opt) {
+            $('#workbooks .row').append(buildTile(response.serverUrl + response.site + "/views/" + opt.defaultViewUrl, response.serverUrl + "/" + opt.thumbnailUrl, opt.name, opt.usageInfo.hitsTotal));
+          }
         });
       }
     });
     $('#datasources .row').html("");
-    app.getDatasources(searchTerm,true,0,[], function(response) {
+    app.getDatasources(searchTerm,true,0,[], true, function(response) {
       var datasources = response.result.datasources;
       if (datasources[0]) {
         $.each(datasources, function(val, opt) {
-          $('#datasources .row').append(buildTile(resp.serverUrl + resp.site + "/datasources/" + opt.id + "/connections", "/img/ds.png", opt.name, opt.usageInfo.hitsTotal));
+          if(opt) {
+            $('#datasources .row').append(buildTile(response.serverUrl + response.site + "/datasources/" + opt.id + "/connections", "/img/ds.png", opt.name, opt.usageInfo.hitsTotal));
+          }
         });
       }
+    });
+  }
+
+  app.getTDE = function(data, node, callback) {
+    var callVars = {};
+    callVars.content = data.result;
+    callVars.node = node;
+    var settings = {
+      url : "https://tabcommunicate.theinformationlab.co.uk/remote/tde",
+      method : "POST",
+      data : callVars,
+      contentType : "application/x-www-form-urlencoded"
+    }
+    $.ajax(settings).done(function (response) {
+      callback('https://tabcommunicate.theinformationlab.co.uk/' + response.substring(1));
     });
   }
 
@@ -349,13 +377,16 @@
     url = window.location.href;
     if (creds.server_url && !url.includes('view.html')) {
       app.checkSession(creds.server_url, function(resp) {
-        showFavourites();
+        if(creds.server_url != "https://public.tableau.com") {
+          app.showFavourites();
+        }
       });
     } else if (creds.server_url && url.includes('view.html')) {
       app.checkSession(creds.server_url, function(resp) {
         var searchTerm = getParameterByName('s');
+        var view = getParameterByName('v');
         $('#searchTerm').val(searchTerm);
-        pageSearch(searchTerm);
+        app.pageSearch(searchTerm);
         $('.nav-item').click(function() {
 
           $('.nav-item.active').removeClass('active');
@@ -366,8 +397,33 @@
           $('#'+selectedTab).removeClass('hide');
         });
         $('#search').click(function() {
-          pageSearch($('#searchTerm').val());
-        })
+          app.pageSearch($('#searchTerm').val());
+        });
+        $('#tdeExportBtn').click(function() {
+          switch(view) {
+            case 'views':
+              app.getViews(searchTerm,true,0,[], false, function(response) {
+                app.getTDE(response, 'views', function(url) {
+                  window.open(url, '_blank');
+                });
+              });
+              break;
+            case 'workbooks':
+              app.getWorkbooks(searchTerm,true,0,[], false, function(response) {
+                app.getTDE(response, 'workbooks', function(url) {
+                  window.open(url, '_blank');
+                });
+              });
+              break;
+            case 'datasources':
+              app.getDatasources(searchTerm,true,0,[], false, function(response) {
+                app.getTDE(response, 'datasources', function(url) {
+                  window.open(url, '_blank');
+                });
+              });
+              break;
+          }
+        });
       });
     } else {
       //shop options screen

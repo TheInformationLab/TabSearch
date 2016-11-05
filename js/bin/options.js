@@ -29,7 +29,7 @@
     	}
     	$.ajax(settings).done(function (response) {
         console.log("All's good");
-        opt.saveCreds(serverUrl, response.result.site.urlName, response.result.user.username, function(resp) {
+        opt.saveCreds(serverUrl, response.result.site.urlName, response.result.user.username, response.result.user.id, function(resp) {
           console.log(resp);
           $('username').val(response.result.user.username);
           opt.getSites(serverUrl, function(resp) {
@@ -79,14 +79,22 @@
   		  "data": "{\"method\":\"login\",\"params\":{\"username\":\""+username+"\",\"encryptedPassword\":\""+res+"\",\"keyId\":\""+keyID+"\"}}"
   		}
   		$.ajax(settings).done(function (response, textStatus, jqXHR) {
-        opt.saveCreds(serverUrl, "", username, function(resp) {
-          callback(resp);
-        });
+        if (response.result.errors) {
+          if (response.result.errors[0].code == 55) {
+            //rerun login with new destination Pod URL
+            $('serverUrl').val(response.result.errors[0].destinationPodUrl);
+            opt.login(response.result.errors[0].destinationPodUrl, username, password, callback);
+          }
+        } else {
+          opt.saveCreds(serverUrl, response.result.site.urlName, username, response.result.user.id, function(resp) {
+            callback(resp);
+          });
+        }
       })
     })
   }
 
-  opt.saveCreds = function(serverUrl, site, username, callback) {
+  opt.saveCreds = function(serverUrl, site, username, userId, callback) {
     var parser = document.createElement('a');
     parser.href = serverUrl;
     chrome.cookies.getAll({domain : parser.hostname}, function(cookies) {
@@ -105,6 +113,7 @@
       creds.xsrf_token = xsrf_token;
       creds.server_url = serverUrl;
       creds.username = username;
+      creds.userId = userId;
       if (site != "") {
         creds.site = "/#/site/" + site;
       } else {
@@ -168,7 +177,7 @@
     });
   }
 
-  opt.switchSite = function (serverUrl, site, username, callback) {
+  opt.switchSite = function (serverUrl, site, username, userId, callback) {
     chrome.storage.local.get(null, function(creds) {
     	var settings = {
     	  "async": false,
@@ -183,9 +192,17 @@
     	  "data": "{\"method\":\"switchSite\",\"params\":{\"urlName\":\""+site+"\"}}"
     	}
     	$.ajax(settings).done(function (response) {
-        opt.saveCreds(serverUrl, site, username, function(resp) {
-          callback(resp);
-        });
+        if (response.result.errors) {
+          if (response.result.errors[0].code == 55) {
+            //rerun login with new destination Pod URL
+            $('serverUrl').val(response.result.errors[0].destinationPodUrl);
+            opt.login(response.result.errors[0].destinationPodUrl, username, password, callback);
+          }
+        } else {
+          opt.saveCreds(serverUrl, site, username, userId, function(resp) {
+            callback(resp);
+          });
+        }
     	});
     });
   }
@@ -194,6 +211,7 @@
     chrome.storage.local.get(null, function(creds) {
       if ((creds.server_url) ? $('#serverUrl').val(creds.server_url) : null);
       if ((creds.username) ? $('#username').val(creds.username) : null);
+      if ((creds.userId) ? $('#username').attr('data-userId',creds.userId) : null);
       if ((creds.site) ? $('#site').val(creds.site) : null);
       if ((creds.server_url) ? opt.checkSession(creds.server_url) : null);
     });
@@ -214,7 +232,7 @@
       });
     });
     $('#sites').change( function() {
-      opt.switchSite($('#serverUrl').val(), $('#sites').val(), $('#username').val(), function(resp) {
+      opt.switchSite($('#serverUrl').val(), $('#sites').val(), $('#username').val(),$('#username').attr('data-userId'), function(resp) {
         console.log(resp);
       });
     });
