@@ -21,15 +21,42 @@
   padding-left: 5px;
 }
 
+.container {
+  min-width: 400px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.section {
+  border-bottom: 1px solid grey;
+  font-size: 12px;
+  padding-top: 10px;
+  padding-left: 10px;
+  margin-bottom: 10px;
+}
+
+.section h2{
+  font-size: 15px;
+  display: inline;
+  padding-right: 20px;
+}
+
 .row {
   padding-left: 10px;
   padding-right: 10px;
 }
 
+.form-group {
+  margin-bottom: 10px;
+}
+
 #sites {
   display: none;
 }
-
 #connectedClient {
   display: none;
+}
+
+.btn {
+margin-top: 10px;
 }

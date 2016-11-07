@@ -32,52 +32,94 @@
     	}
     	$.ajax(settings).done(function (response) {
         console.log("All's good");
-        app.saveCreds(serverUrl, response.result.site.urlName, response.result.user.username,response.result.user.id, function(resp) {
-          callback(resp);
-        })
+        callback(true);
+        app.saveCreds(serverUrl, response.result.site.urlName, response.result.user.username, response.result.user.id, undefined, function(resp) {
+          console.log(resp);
+        });
       }).fail(function() {
-        console.log("No Good");
-        if (chrome.runtime.openOptionsPage) {
-          // New way to open options pages, if supported (Chrome 42+).
-          chrome.runtime.openOptionsPage();
-        } else {
-          // Reasonable fallback.
-          window.open(chrome.runtime.getURL('options.html'));
-        }
-      })
-    });
-  }
-
-  app.saveCreds = function(serverUrl, site, username, userId, callback) {
-    var parser = document.createElement('a');
-    parser.href = serverUrl;
-    chrome.cookies.getAll({domain : parser.hostname}, function(cookies) {
-      for (var i=0; i<cookies.length; i++) {
-        switch (cookies[i].name) {
-          case "workgroup_session_id":
-            var workgroup_session_id = cookies[i].value;
-            break;
-          case "XSRF-TOKEN":
-            var xsrf_token = cookies[i].value;
-            break;
-        }
-      }
-      var creds = {};
-      creds.access_token = workgroup_session_id;
-      creds.xsrf_token = xsrf_token;
-      creds.server_url = serverUrl;
-      creds.username = username;
-      creds.userId = userId;
-      if (site != "") {
-        creds.site = "/#/site/" + site;
-      } else {
-        creds.site = "";
-      }
-      chrome.storage.local.set(creds, function() {
-        callback('Basic Auth credentials saved');
+        chrome.storage.local.get(null, function(creds) {
+          credentials = creds;
+          console.log("Trying Connected Desktop");
+          chrome.instanceID.getID(function(instanceID) {
+            if (credentials["server_url"] && credentials.refreshToken) {
+              var settings = {
+            	  "async": true,
+            	  "crossDomain": true,
+            	  "url": serverUrl + "/oauth2/v1/token",
+            	  "method": "POST",
+            		"headers": {
+            	    "accept": "*/*",
+            			"content-type": "application/x-www-form-urlencoded"
+            		},
+            	  "data": "client_id="+instanceID+"&device_id="+instanceID+"&grant_type=refresh_token&refresh_token="+credentials.refreshToken+"&site_namespace="+credentials.site
+            	}
+            	$.ajax(settings).done(function (response) {
+                console.log("All's good");
+                $('#loginBtn').hide();
+                $('#logoutBtn').show();
+                $('.loggedIn').show();
+                var parser = document.createElement('a');
+                parser.href = serverUrl;
+                chrome.cookies.set({url : serverUrl, name: "workgroup_session_id", value: response["access_token"]});
+                chrome.cookies.set({url : serverUrl, name: "XSRF-TOKEN", value: response["xsrf_token"]});
+                app.saveCreds(serverUrl, credentials.site, credentials.username, credentials.userId, response, function(resp) {
+                  console.log(resp);
+                  callback(true);
+                });
+              }).fail(function() {
+                console.log("No Good");
+                callback(false);
+              });
+            } else {
+              console.log("No Good");
+              callback(false);
+            }
+          });
+        });
       });
     });
   }
+
+  app.saveCreds = function(serverUrl, site, username, userId, refreshToken, callback) {
+    curentCreds = {};
+    chrome.storage.local.get(null, function(creds) {
+      currentCreds = creds;
+      var parser = document.createElement('a');
+      parser.href = serverUrl;
+      chrome.cookies.getAll({domain : parser.hostname}, function(cookies) {
+        for (var i=0; i<cookies.length; i++) {
+          switch (cookies[i].name) {
+            case "workgroup_session_id":
+              var workgroup_session_id = cookies[i].value;
+              break;
+            case "XSRF-TOKEN":
+              var xsrf_token = cookies[i].value;
+              break;
+          }
+        }
+        currentCreds.access_token = workgroup_session_id;
+        currentCreds.xsrf_token = xsrf_token;
+        currentCreds.server_url = serverUrl;
+        currentCreds.username = username;
+        currentCreds.userId = userId;
+        currentCreds.site = site;
+        if (refreshToken) {
+          currentCreds.refreshToken = refreshToken["refresh_token"];
+          currentCreds.access_token = refreshToken["access_token"];
+          currentCreds.xsrf_token = refreshToken["xsrf_token"];
+          if (refreshToken.deviceName) {
+            currentCreds.deviceName = refreshToken.deviceName;
+          }
+        }
+        console.log(currentCreds);
+        $('#computer').val(currentCreds.deviceName);
+        chrome.storage.local.set(currentCreds, function() {
+          callback('Basic Auth credentials saved');
+        });
+      });
+    });
+  }
+
 
   app.getWorkbooks = function(str, all, page, workbooks, live, callback) {
     chrome.storage.local.get(null, function(creds) {
@@ -277,6 +319,10 @@
       var favourites = resp.result.favorites;
       var workbooks = resp.result.workbooks;
       var views = resp.result.views;
+      var site = resp.site;
+      if (site.length > 0) {
+        resp.site = "/#/site/" + resp.site;
+      }
       var datasources = [];
       for (var i=0; i < favourites.length; i++) {
         if (favourites[i].objectType == "datasource") {
@@ -326,6 +372,10 @@
     $('#views .row').html("");
     app.getViews(searchTerm,true,0,[], true, function(response) {
       var views = response.result.views;
+      var site = response.site;
+      if (site.length > 0) {
+        response.site = "/#/site/" + response.site;
+      }
       if (views.length > 0) {
         $.each(views, function(val, opt) {
           if (opt) {

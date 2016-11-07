@@ -3,12 +3,15 @@
   "version": "3.0",
   "manifest_version": 2,
   "description": "Created by Craig Bloodworth, The Information Lab powered by Tableau",
+  "icons": { "16": "img/tabsearch16.png",
+           "48": "img/tabsearch48.png",
+          "128": "img/tabsearch128.png" },
   "background": {
     "persistent": false,
     "scripts": ["js/bin/background.js"]
   },
   "browser_action": {
-    "default_icon": "img/icon.png",
+    "default_icon": "img/tabsearch128.png",
     "default_popup": "popup.html"
   },
   "options_ui": {
@@ -17,6 +20,6 @@
     "open_in_tab": false
   },
   "permissions": [
-	"http://*/*","https://*/*","storage","tabs","cookies","gcm"
+	   "http://*/*","https://*/*","storage","tabs","cookies","gcm"
   ]
 }
