@@ -119,12 +119,18 @@
     var newWin = {
       url: serverUrl,
       focused: true,
-      type: "popup"
+      type: "popup",
+      width: 640,
+      height: 740
     }
     chrome.windows.create(newWin, function (win) {
       var wgChanged = false;
       var xtChanged = false;
-      var counter = 0;
+      if (serverUrl.includes("online.tableau.com")) {
+        var counter = 1;
+      } else {
+        var counter = 0;
+      }
       var wgValue = "";
       var xtValue = "";
       chrome.cookies.onChanged.addListener(function(obj) {
@@ -145,8 +151,12 @@
             var creds = {};
             creds.access_token = wgValue;
             creds.xsrf_token = xtValue;
+            var parser = document.createElement('a');
+            parser.href = serverUrl;
+            serverUrl = parser.protocol + "//" + obj.cookie.domain;
+            console.log("Changing server url to " + serverUrl);
+            $('#serverUrl').val(serverUrl);
             creds.server_url = serverUrl;
-
             chrome.storage.local.set(creds, function() {
               console.log('Creds without Site Saved');
               $('.loggedIn').show();
@@ -282,8 +292,25 @@
         if (response.result.errors) {
           if (response.result.errors[0].code == 55) {
             //rerun login with new destination Pod URL
-            $('serverUrl').val(response.result.errors[0].destinationPodUrl);
-            opt.login(response.result.errors[0].destinationPodUrl, username, password, callback);
+            var newPodUrl = response.result.errors[0].destinationPodUrl;
+            $('#serverUrl').val(newPodUrl);
+            opt.logout(serverUrl, function(resp) {
+              opt.login(newPodUrl, function(resp) {
+                console.log(resp);
+                opt.getSites($('#serverUrl').val(), function(resp) {
+                  $('#sites').html('');
+                  $.each(resp.result.siteNames, function(val, opt) {
+                    var label = opt.name;
+                    var siteUrl = opt.urlName;
+                    $('#sites').append(
+                        $('<option></option>').val(siteUrl).html(label)
+                    );
+                  });
+                  $('#sites').show();
+                  $('#connectedClient').show();
+                });
+              });
+            });
           }
         } else {
           opt.saveCreds(serverUrl, site, username, userId, undefined, function(resp) {
@@ -328,20 +355,8 @@
       }
     });
     $('#loginBtn').click( function() {
-      opt.login($('#serverUrl').val(), function(resp) {
+      opt.checkSession($('#serverUrl').val(), function (resp) {
         console.log(resp);
-        opt.getSites($('#serverUrl').val(), function(resp) {
-          $('#sites').html('');
-          $.each(resp.result.siteNames, function(val, opt) {
-            var label = opt.name;
-            var siteUrl = opt.urlName;
-            $('#sites').append(
-                $('<option></option>').val(siteUrl).html(label)
-            );
-          });
-          $('#sites').show();
-          $('#connectedClient').show();
-        });
       });
     });
     $('#logoutBtn').click( function() {

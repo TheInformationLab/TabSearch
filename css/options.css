@@ -60,3 +60,11 @@
 .btn {
 margin-top: 10px;
 }
+
+a.btn-primary {
+  color: #FFF;
+}
+
+a:not([href]):not([tabindex]) {
+    color: #FFF;
+}

@@ -2,7 +2,7 @@
   "name": "TabSearch for Tableau Server™",
   "version": "3.0",
   "manifest_version": 2,
-  "description": "Created by Craig Bloodworth, The Information Lab powered by Tableau",
+  "description": "Created by Craig Bloodworth (The Information Lab), powered by Tableau",
   "icons": { "16": "img/tabsearch16.png",
            "48": "img/tabsearch48.png",
           "128": "img/tabsearch128.png" },

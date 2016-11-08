@@ -67,10 +67,12 @@
                   callback(true);
                 });
               }).fail(function() {
+                chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
                 console.log("No Good");
                 callback(false);
               });
             } else {
+              chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
               console.log("No Good");
               callback(false);
             }
@@ -201,6 +203,14 @@
       if(all) {
         itemLimit = 200;
       }
+      var curPage = page * itemLimit;
+      if (str.includes("db:")) {
+        str = str.replace("db:","");
+        str = str.trim();
+        var dataStr = "{\"method\":\"getDatasources\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"matches\",\"field\":\"serverName\",\"value\":\""+str+"\"},{\"operator\":\"eq\",\"field\":\"isPublished\",\"value\":true}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
+      } else {
+        var dataStr = "{\"method\":\"getDatasources\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"eq\",\"field\":\"isPublished\",\"value\":true},{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
+      }
       var curPage = page * itemLimit ;
       var settings = {
         "async": true,
@@ -212,7 +222,7 @@
           "accept": "application/json, text/plain, */*",
     			"content-type": "application/json;charset=UTF-8"
         },
-        "data" : "{\"method\":\"getDatasources\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"eq\",\"field\":\"isPublished\",\"value\":true},{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
+        "data" : dataStr
       }
       $.ajax(settings).done(function (response) {
         datasources = datasources.concat(response.result.datasources);
@@ -281,6 +291,10 @@
     $('#workbooks').html("");
     app.getWorkbooks(str,false,0,[], false, function(resp) {
       var workbooks = resp.result.workbooks;
+      var site = resp.site;
+      if (site.length > 0) {
+        resp.site = "/#/site/" + resp.site;
+      }
       if (resp.result.totalCount > 0) {
         $('#workbooks').append("<div class='section'><h2>Workbooks</h2>"+resp.result.totalCount+"<div class='ViewAll'><a href='view.html?s="+str+"&v=workbooks' target='_blank'>View All</a></div></div>");
         $.each(workbooks, function(val, opt) {
@@ -291,6 +305,10 @@
     $('#views').html("");
     app.getViews(str,false,0,[], false, function(resp) {
       var views = resp.result.views;
+      var site = resp.site;
+      if (site.length > 0) {
+        resp.site = "/#/site/" + resp.site;
+      }
       if (resp.result.totalCount > 0) {
         $('#views').append("<div class='section'><h2>Views</h2>"+resp.result.totalCount+"<div class='ViewAll'><a href='view.html?s="+str+"&v=views' target='_blank'>View All</a></div></div>");
         $.each(views, function(val, opt) {
@@ -301,6 +319,10 @@
     $('#datasources').html("");
     app.getDatasources(str,false,0,[], false, function(resp) {
       var datasources = resp.result.datasources;
+      var site = resp.site;
+      if (site.length > 0) {
+        resp.site = "/#/site/" + resp.site;
+      }
       if (resp.result.totalCount > 0) {
         $('#datasources').append("<div class='section'><h2>Data Sources</h2>"+resp.result.totalCount+"<div class='ViewAll'><a href='view.html?s="+str+"&v=datasources' target='_blank'>View All</a></div></div>");
         $.each(datasources, function(val, opt) {
@@ -388,6 +410,10 @@
     app.getWorkbooks(searchTerm,true,0,[], true, function(response) {
       var workbooks = response.result.workbooks;
       if (workbooks.length > 0) {
+        var site = response.site;
+        if (site.length > 0) {
+          response.site = "/#/site/" + response.site;
+        }
         $.each(workbooks, function(val, opt) {
           if (opt) {
             $('#workbooks .row').append(buildTile(response.serverUrl + response.site + "/views/" + opt.defaultViewUrl, response.serverUrl + "/" + opt.thumbnailUrl, opt.name, opt.usageInfo.hitsTotal));
@@ -398,6 +424,10 @@
     $('#datasources .row').html("");
     app.getDatasources(searchTerm,true,0,[], true, function(response) {
       var datasources = response.result.datasources;
+      var site = response.site;
+      if (site.length > 0) {
+        response.site = "/#/site/" + response.site;
+      }
       if (datasources[0]) {
         $.each(datasources, function(val, opt) {
           if(opt) {
@@ -437,6 +467,12 @@
         var view = getParameterByName('v');
         $('#searchTerm').val(searchTerm);
         app.pageSearch(searchTerm);
+        if (view) {
+          $('.nav-item.active').removeClass('active');
+          $('#'+view+"Link").addClass('active');
+          $('.tab').addClass('hide');
+          $('#'+view).removeClass('hide');
+        }
         $('.nav-item').click(function() {
 
           $('.nav-item.active').removeClass('active');
@@ -476,7 +512,7 @@
         });
       });
     } else {
-      //shop options screen
+      chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
     }
   });
 })()
