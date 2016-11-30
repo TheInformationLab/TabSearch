@@ -5,77 +5,88 @@
   $('input').attr("autocomplete", "off");
 
   app.checkSession = function (serverUrl, callback) {
-    var parser = document.createElement('a');
-    parser.href = serverUrl;
-    chrome.cookies.getAll({domain : parser.hostname}, function(cookies) {
-      for (var i=0; i<cookies.length; i++) {
-        switch (cookies[i].name) {
-          case "workgroup_session_id":
-            var workgroup_session_id = cookies[i].value;
-            break;
-          case "XSRF-TOKEN":
-            var xsrf_token = cookies[i].value;
-            break;
+    chrome.storage.local.get(null, function(creds) {
+      var parser = document.createElement('a');
+      parser.href = serverUrl;
+      app.getCookies(serverUrl, function(workgroup_session_id, xsrf_token) {
+        if (workgroup_session_id == '""') {
+          chrome.cookies.remove({url : serverUrl, name: "workgroup_session_id"});
         }
-      }
-      var settings = {
-    	  "async": true,
-    	  "crossDomain": true,
-    	  "url": serverUrl + "/vizportal/api/web/v1/getSessionInfo",
-    	  "method": "POST",
-    		"headers": {
-          "X-XSRF-TOKEN": xsrf_token,
-    	    "accept": "application/json, text/plain, */*",
-    			"content-type": "application/json;charset=UTF-8"
-    		},
-    	  "data": "{\"method\":\"getSessionInfo\",\"params\":{}}"
-    	}
-    	$.ajax(settings).done(function (response) {
-        console.log("All's good");
-        callback(true);
-        app.saveCreds(serverUrl, response.result.site.urlName, response.result.user.username, response.result.user.id, undefined, function(resp) {
-          console.log(resp);
-        });
-      }).fail(function() {
-        chrome.storage.local.get(null, function(creds) {
-          credentials = creds;
-          console.log("Trying Connected Desktop");
-          chrome.instanceID.getID(function(instanceID) {
-            if (credentials["server_url"] && credentials.refreshToken) {
-              var settings = {
-            	  "async": true,
-            	  "crossDomain": true,
-            	  "url": serverUrl + "/oauth2/v1/token",
-            	  "method": "POST",
-            		"headers": {
-            	    "accept": "*/*",
-            			"content-type": "application/x-www-form-urlencoded"
-            		},
-            	  "data": "client_id="+instanceID+"&device_id="+instanceID+"&grant_type=refresh_token&refresh_token="+credentials.refreshToken+"&site_namespace="+credentials.site
-            	}
-            	$.ajax(settings).done(function (response) {
-                console.log("All's good");
-                $('#loginBtn').hide();
-                $('#logoutBtn').show();
-                $('.loggedIn').show();
-                var parser = document.createElement('a');
-                parser.href = serverUrl;
-                chrome.cookies.set({url : serverUrl, name: "workgroup_session_id", value: response["access_token"]});
-                chrome.cookies.set({url : serverUrl, name: "XSRF-TOKEN", value: response["xsrf_token"]});
-                app.saveCreds(serverUrl, credentials.site, credentials.username, credentials.userId, response, function(resp) {
-                  console.log(resp);
-                  callback(true);
+        var settings = {
+      	  "async": true,
+      	  "crossDomain": true,
+      	  "url": serverUrl + "/vizportal/api/web/v1/getSessionInfo",
+      	  "method": "POST",
+      		"headers": {
+            "X-XSRF-TOKEN": xsrf_token,
+      	    "accept": "application/json, text/plain, */*",
+      			"content-type": "application/json;charset=UTF-8"
+      		},
+      	  "data": "{\"method\":\"getSessionInfo\",\"params\":{}}"
+      	}
+        if (creds.access_token) {
+          settings.headers.Authorization = "Bearer " + creds.access_token;
+        }
+      	$.ajax(settings).done(function (response) {
+          console.log("All's good");
+          console.log(response);
+          if(creds.refreshToken) {
+            var refreshToken = {};
+            refreshToken.refresh_token = creds.refreshToken;
+            refreshToken.access_token = creds["access_token"];
+            refreshToken.xsrf_token = xsrf_token;
+            refreshToken.deviceName = creds.deviceName;
+          } else {
+            var refreshToken = undefined;
+          }
+          app.saveCreds(serverUrl, response.result.site.urlName, response.result.user.username, response.result.user.id, refreshToken, function(resp) {
+            console.log(resp);
+            callback(true);
+          });
+        }).fail(function() {
+          chrome.storage.local.get(null, function(creds) {
+            console.log("Trying Connected Desktop");
+            chrome.instanceID.getID(function(instanceID) {
+              if (creds["server_url"] && creds.refreshToken) {
+                var settings = {
+              	  "async": true,
+              	  "crossDomain": true,
+              	  "url": serverUrl + "/oauth2/v1/token",
+              	  "method": "POST",
+              		"headers": {
+              	    "accept": "*/*",
+              			"content-type": "application/x-www-form-urlencoded"
+              		},
+              	  "data": "client_id="+instanceID+"&device_id="+instanceID+"&grant_type=refresh_token&refresh_token="+creds.refreshToken+"&site_namespace="+creds.site
+              	}
+                if (creds.access_token) {
+                  settings.headers.Authorization = "Bearer " + creds.access_token;
+                }
+              	$.ajax(settings).done(function (response) {
+                  console.log("All's good");
+                  var parser = document.createElement('a');
+                  parser.href = serverUrl;
+                  chrome.cookies.get({url: serverUrl, name: "workgroup_session_id"}, function(cookie) {
+                    if (cookie.value == '""') {
+                      chrome.cookies.remove({url : serverUrl, name: "workgroup_session_id"});
+                    }
+                    chrome.cookies.set({url : serverUrl, name: "XSRF-TOKEN", value: response["xsrf_token"]});
+                    app.saveCreds(serverUrl, creds.site, creds.username, creds.userId, response, function(resp) {
+                      console.log(resp);
+                      callback(true);
+                    });
+                  });
+                }).fail(function() {
+                  chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
+                  console.log("No Good");
+                  callback(false);
                 });
-              }).fail(function() {
+              } else {
                 chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
                 console.log("No Good");
                 callback(false);
-              });
-            } else {
-              chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
-              console.log("No Good");
-              callback(false);
-            }
+              }
+            });
           });
         });
       });
@@ -86,42 +97,50 @@
     curentCreds = {};
     chrome.storage.local.get(null, function(creds) {
       currentCreds = creds;
-      var parser = document.createElement('a');
-      parser.href = serverUrl;
-      chrome.cookies.getAll({domain : parser.hostname}, function(cookies) {
-        for (var i=0; i<cookies.length; i++) {
-          switch (cookies[i].name) {
-            case "workgroup_session_id":
-              var workgroup_session_id = cookies[i].value;
-              break;
-            case "XSRF-TOKEN":
-              var xsrf_token = cookies[i].value;
-              break;
+      chrome.storage.local.clear(function() {
+        var parser = document.createElement('a');
+        parser.href = serverUrl;
+        app.getCookies(serverUrl, function(workgroup_session_id, xsrf_token) {
+          if (workgroup_session_id) {
+            currentCreds.workgroup_session_id = workgroup_session_id;
           }
-        }
-        currentCreds.access_token = workgroup_session_id;
-        currentCreds.xsrf_token = xsrf_token;
-        currentCreds.server_url = serverUrl;
-        currentCreds.username = username;
-        currentCreds.userId = userId;
-        currentCreds.site = site;
-        if (refreshToken) {
-          currentCreds.refreshToken = refreshToken["refresh_token"];
-          currentCreds.access_token = refreshToken["access_token"];
-          currentCreds.xsrf_token = refreshToken["xsrf_token"];
-          if (refreshToken.deviceName) {
-            currentCreds.deviceName = refreshToken.deviceName;
+          currentCreds.xsrf_token = xsrf_token;
+          currentCreds.server_url = serverUrl;
+          currentCreds.username = username;
+          currentCreds.userId = userId;
+          currentCreds.site = site;
+          if (refreshToken) {
+            currentCreds.refreshToken = refreshToken["refresh_token"];
+            currentCreds.access_token = refreshToken["access_token"];
+            currentCreds.xsrf_token = refreshToken["xsrf_token"];
+            if (refreshToken.deviceName) {
+              currentCreds.deviceName = refreshToken.deviceName;
+            }
           }
-        }
-        console.log(currentCreds);
-        $('#computer').val(currentCreds.deviceName);
-        chrome.storage.local.set(currentCreds, function() {
-          callback('Basic Auth credentials saved');
+          console.log(currentCreds);
+          $('#computer').val(currentCreds.deviceName);
+          chrome.storage.local.set(currentCreds, function() {
+            callback('Basic Auth credentials saved');
+          });
         });
       });
     });
   }
 
+  app.getCookies = function(serverUrl, callback) {
+    var workgroup_session_id = xsrf_token = undefined;
+    chrome.cookies.get({url: serverUrl, name: "workgroup_session_id"}, function(wg) {
+      if(wg) {
+        workgroup_session_id = wg.value;
+      }
+      chrome.cookies.get({url: serverUrl, name: "XSRF-TOKEN"}, function(xt) {
+        if (xt) {
+          xsrf_token = xt.value;
+        }
+        callback(workgroup_session_id, xsrf_token)
+      });
+    });
+  }
 
   app.getWorkbooks = function(str, all, page, workbooks, live, callback) {
     chrome.storage.local.get(null, function(creds) {
@@ -141,6 +160,9 @@
     			"content-type": "application/json;charset=UTF-8"
         },
         "data" : "{\"method\":\"getWorkbooks\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
+      }
+      if (creds.access_token) {
+        settings.headers.Authorization = "Bearer " + creds.access_token;
       }
       if (creds.server_url == "https://public.tableau.com") {
         settings.data = "{\"method\":\"getWorkbooks\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"eq\",\"field\":\"ownerId\",\"value\":\""+creds.userId+"\"},{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
@@ -181,6 +203,9 @@
       }
       if (creds.server_url == "https://public.tableau.com") {
         settings.data = "{\"method\":\"getViews\",\"params\":{\"filter\":{\"operator\":\"and\",\"clauses\":[{\"operator\":\"eq\",\"field\":\"ownerId\",\"value\":\""+creds.userId+"\"},{\"operator\":\"matches\",\"value\":\""+str+"\"}]},\"order\":[{\"field\":\"relevancy\",\"ascending\":false}],\"page\":{\"startIndex\":"+curPage+",\"maxItems\":"+itemLimit+"}}}"
+      }
+      if (creds.access_token) {
+        settings.headers.Authorization = "Bearer " + creds.access_token;
       }
       $.ajax(settings).done(function (response) {
         views = views.concat(response.result.views);
@@ -224,6 +249,9 @@
         },
         "data" : dataStr
       }
+      if (creds.access_token) {
+        settings.headers.Authorization = "Bearer " + creds.access_token;
+      }
       $.ajax(settings).done(function (response) {
         datasources = datasources.concat(response.result.datasources);
         response.result.datasources = datasources;
@@ -252,6 +280,9 @@
     			"content-type": "application/json;charset=UTF-8"
         },
         "data" : "{\"method\":\"getFavorites\",\"params\":{\"page\":{\"startIndex\":0,\"maxItems\":1000}}}"
+      }
+      if (creds.access_token) {
+        settings.headers.Authorization = "Bearer " + creds.access_token;
       }
       $.ajax(settings).done(function (response) {
         response.serverUrl = creds.server_url;
@@ -455,6 +486,7 @@
 
   chrome.storage.local.get(null, function(creds) {
     url = window.location.href;
+    console.log(creds);
     if (creds.server_url && !url.includes('view.html')) {
       app.checkSession(creds.server_url, function(resp) {
         if(creds.server_url != "https://public.tableau.com") {

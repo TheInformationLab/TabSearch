@@ -1,8 +1,11 @@
 ﻿{
   "name": "TabSearch for Tableau Server™",
-  "version": "3.0",
+  "short_name":"TabSearch",
+  "version": "3.1",
   "manifest_version": 2,
   "description": "Created by Craig Bloodworth (The Information Lab), powered by Tableau",
+  "default_locale" : "en",
+  "author":"Craig Bloodworth, The Information Lab"
   "icons": { "16": "img/tabsearch16.png",
            "48": "img/tabsearch48.png",
           "128": "img/tabsearch128.png" },
@@ -21,5 +24,6 @@
   },
   "permissions": [
 	   "http://*/*","https://*/*","storage","tabs","cookies","gcm"
-  ]
+  ],
+  "offline_enabled": false
 }

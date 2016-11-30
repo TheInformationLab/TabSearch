@@ -13,7 +13,7 @@
     </div>
     <div class='form-group'>
       <label class='sr-only' for='serverUrl'>Server URL</label>
-      <input type='text' class='form-control' id='serverUrl' placeholder='Server URL' value=''/>
+      <input type='text' class='form-control' id='serverUrl' placeholder='Server URL (e.g. https://online.tableau.com)' value=''/>
     </div>
     <div class='row'>
       <div class='col-xs-2'>
@@ -35,12 +35,36 @@
       <h2>Stay Logged In</h2>
     </div>
     <div class='row' id="connectedClient">
-      <div class='col-xs-3'>
-        <label class='sr-only' for='computer'>Computer Name</label>
-        <input type='text' class='form-control' id='computer' placeholder='Computer Name' value=''/>
+      <div class='col-xs-2 small-text'>
+        Use the connected client feature of Tableau Desktop to keep TabSearch always signed in. You can remove access to your server by going to the 'My Account Settings' section of Tableau Server and remvoing TabSearch from the connected clients list.
       </div>
       <div class='col-xs-2'>
-        <a id='saveBtn' class='btn btn-primary form-control'>Stay Connected</a>
+        <button id='saveBtn' class='btn btn-primary form-control'>Stay Connected</button>
+      </div>
+    </div>
+    <div class="section loggedIn">
+      <h2>Newsletter</h2>
+    </div>
+    <div class='row'>
+      <div class='col-xs-2 small-text'>
+        Keep up to date with everything that's happeing at The Information Lab.
+      </div>
+      <div class='col-xs-2'>
+        <!-- Begin MailChimp Signup Form -->
+            <link href="https://cdn-images.mailchimp.com/embedcode/horizontal-slim-10_7.css" rel="stylesheet" type="text/css">
+            <div id="mc_embed_signup">
+            <form action="https://theinformationlab.us2.list-manage.com/subscribe/post?u=8954cfd70761b8c7fd5d8b528&amp;id=fc1dab699f" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+                <div id="mc_embed_signup_scroll">
+
+                	<input type="email" value="" name="EMAIL" class="form-control" id="mce-EMAIL" placeholder="Email Address" required>
+                    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
+                  <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_8954cfd70761b8c7fd5d8b528_fc1dab699f" tabindex="-1" value=""></div>
+                  <div class="clear"><input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="btn btn-primary form-control"/></div>
+                </div>
+            </form>
+            </div>
+
+            <!--End mc_embed_signup-->
       </div>
     </div>
   </div>

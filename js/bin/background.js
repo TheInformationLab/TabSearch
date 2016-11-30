@@ -12,7 +12,7 @@ chrome.runtime.onInstalled.addListener(function(details) {
 			chrome.runtime.openOptionsPage();
 		} else {
 			// Reasonable fallback.
-			window.open(chrome.runtime.getURL('options.html'));
+			chrome.tabs.create({ 'url': 'chrome://extensions/?options=' + chrome.runtime.id });
 		}
 	}
 } );
